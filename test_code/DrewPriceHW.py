@@ -39,6 +39,33 @@ def evaluate(w_current, b_current, X_tst, Y_tst): # evaluate the predictive accu
         # predict the label of X_tst[i], update the count of correct prediction
     return pred_acc # replace this with the return of the accuracy, which is the percentage of corrected predictions
 
+# next, you are to fill in the training code
+
+def update(w_current, b_current, X_tr, Y_tr): # (w_current, b_current) is the current estimated perceptron while (X_tr, Y_tr) is an individual (input, output) data point
+    # use (w_current, b_current) to predict the label Y_pred for X_tr
+    Y_pred = predict(w_current, b_current, X_tr)
+    # compare Y_pred to (ground-truth) Y_tr and make adjustment to (w_current, b_current) as discussed in the lecture
+    if Y_pred != Y_tr:
+      for i in range(len(w_current)):
+        w_current[i] = w_current[i] + alpha * (Y_tr - Y_pred) * X_tr[i]
+      b_current += alpha * (Y_tr - Y_pred)
+    return w_current, b_current # replace this with the return of the updated version of (w_current, b_current)
+
+def perceptron_training(X_train, Y_train, alpha, n_epoch, checkpoint):
+    d = X.shape[1] # feature dimension
+    w, b = np.zeros(d), 0 # set everything to zero
+    perceptrons = [] # use this list to store the perceptron models every "checkpoint" epochs
+
+    for n in trange(n_epoch):  # for each epoch
+        # perform a full scan over the training dataset & update the (w, b) whenever the prediction is incorrect
+        for i in range(X_train.shape[0]):
+          w,b = update(w,b,X_train[i], Y_train[i])
+
+        if (n + 1) % checkpoint == 0:  # at every "checkpoint" epoches
+            # save the current perceptron
+            perceptrons.append((w, b))
+    return perceptrons  # return the list of saved perceptrons
+
 # set up evaluation configuration
 n_evaluation, checkpoint, n_epoch, alpha = 5, 1000, 40000, 0.005
 # n_evaluation: how many independent evaluation runs
