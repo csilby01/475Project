@@ -58,6 +58,7 @@ class NodeVisitor(ast.NodeVisitor):
         whiles = [x for x in ast.walk(ast_node) if isinstance(x, ast.While)]
         expressions = [x for x in ast.walk(ast_node) if isinstance(x, ast.Expr)]
         args = [x for x in ast.walk(ast_node) if isinstance(x, ast.arg)]
+        ifs = [x for x in ast.walk(ast_node)]
 
         # Get number of calls
         num_calls = len(calls)
@@ -93,8 +94,8 @@ def sim_df(sim):
     return df
 def main():
     # create Paths for the two files to process
-    file1 = Path('test_code/autoregressive.py')
-    file2 = Path('test_code/battle_generator.py')
+    file1 = Path('test_code/rockpapergpt.py')
+    file2 = Path('test_code/rockpapercheater.py')
 
     # process each of the two files
     #print("File 1 Nodes:")
