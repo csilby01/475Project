@@ -1,36 +1,124 @@
-def predict(w_current, b_current, x_tst): # predict the label of x_tst with the current perceptron (w_current, b_current)
-    # compute the percentron activation
-    # if it is > 0, predict +1 (Mine)
-    # otherwise, predict -1 (Rock)
-    if np.sum(w_current*x_tst) + b_current >0:
-      return 1
-    return -1
+class TreeNode:
+    def __init__(self, majClass):
+        self.split_feature = -1 # -1 indicates leaf node
+        self.children = {} # dictionary of {feature_value: child_tree_node}
+        self.majority_class = majClass
 
-def evaluate(w_current, b_current, X_tst, Y_tst): # evaluate the predictive accuracy of (w, b) on (X_tst, Y_tst)
-    acc = 0 # this variable records the no. of corrected predictions so far
-    for i in range(X_tst.shape[0]): # for each test input
-        if predict(w_current, b_current, X_tst[i]) == Y_tst[i]:
-          acc+=1
-    return acc/X_tst.shape[0]
+def build_tree(examples, limit):
+    if len(examples) == 0:
+        return None
+    # collect sets of values for each feature index, based on the examples
+    features = {}
+    for feature_index in range(len(examples[0]) - 1):
+        features[feature_index] = set([example[feature_index] for example in examples])
+    return expand(examples, features, limit)
 
-def update(w_current, b_current, X_tr, Y_tr): # (w_current, b_current) is the current estimated perceptron while (X_tr, Y_tr) is an individual (input, output) data point
-    # use (w_current, b_current) to predict the label Y_pred for X_tr
-    prediction = predict(w_current, b_current, X_tr)
-    if prediction != Y_tr:
-        for i in range (w_current.shape[0]):
-            w_current[i] = w_current[i] + alpha*(Y_tr - prediction)*X_tr[i]
-        b_current = b_current + alpha*(Y_tr - prediction)
-    return (w_current, b_current)
+def expand(examples, features, limit, depth = 1):
+    tree_node = TreeNode(majority_class(examples))
+    # if no examples for this node, then return leaf node predicting majority class
+    if len(examples) == 0:
+      return tree_node
+    #if depth limit reached
+    if depth == limit:
+      return tree_node
+    # if examples all have same class, then return leaf node predicting this class
+    if same_class(examples):
+        return tree_node
+    # if no more features to split on, then return leaf node predicting majority class
+    if not features:
+        return tree_node
+    # split on best feature and recursively generate children
+    best_feature_index = best_feature(features, examples)
+    tree_node.split_feature = best_feature_index
+    remaining_features = features.copy()
+    remaining_features.pop(best_feature_index)
+    for feature_value in features[best_feature_index]:
+        split_examples = filter_examples(examples, best_feature_index, feature_value)
+        tree_node.children[feature_value] = expand(split_examples, remaining_features, limit, depth + 1)
+    return tree_node
 
-def perceptron_training(X_train, Y_train, alpha, n_epoch, checkpoint):
-    d = X.shape[1] # feature dimension
-    w, b = np.zeros(d), 0 # set everything to zero
-    perceptrons = [] # use this list to store the perceptron models every "checkpoint" epochs
-    for n in trange(n_epoch):  # for each epoch
-        # perform a full scan over the training dataset & update the (w, b) whenever the prediction is incorrect
-        for i in range(X_train.shape[0]):
-          temp = update(w, b, X_train[i], Y_train[i])
-          w, b = temp[0], temp[1]
-        if (n + 1) % checkpoint == 0:  # at every "checkpoint" epoches
-            perceptrons.append((w,b))
-    return perceptrons  # return the list of saved perceptrons
+def majority_class(examples):
+    if len(examples) == 0:
+      return 'positive'   # hard coded for this dataset
+    classes = [example[-1] for example in examples]
+    return max(set(classes), key = classes.count)
+
+def same_class(examples):
+    classes = [example[-1] for example in examples]
+    return (len(set(classes)) == 1)
+
+def best_feature(features, examples):
+    # Return index of feature with lowest entropy after split
+    best_feature_index = -1
+    best_entropy = 2.0 # max entropy = 1.0
+    for feature_index in features:
+        se = split_entropy(feature_index, features, examples)
+        if se < best_entropy:
+            best_entropy = se
+            best_feature_index = feature_index
+    return best_feature_index
+
+def split_entropy(feature_index, features, examples):
+    # Return weighted sum of entropy of each subset of examples by feature value.
+    se = 0.0
+    for feature_value in features[feature_index]:
+        split_examples = filter_examples(examples, feature_index, feature_value)
+        se += (float(len(split_examples)) / float(len(examples))) * entropy(split_examples)
+    return se
+
+def entropy(examples):
+    classes = [example[-1] for example in examples]
+    classes_set = set(classes)
+    class_counts = [classes.count(c) for c in classes_set]
+    e = 0.0
+    class_sum = sum(class_counts)
+    for class_count in class_counts:
+        if class_count > 0:
+            class_frac = float(class_count) / float(class_sum)
+            e += (-1.0)* class_frac * math.log(class_frac, 2.0)
+    return e
+
+def filter_examples(examples, feature_index, feature_value):
+    # Return subset of examples with given value for given feature index.
+    return list(filter(lambda example: example[feature_index] == feature_value, examples))
+
+def print_tree(tree_node, depth = 1):
+    indent_space = depth * "  "
+    if tree_node.split_feature == -1: # leaf node
+        print(indent_space + "class: " + tree_node.majority_class)
+    else:
+        for feature_value in tree_node.children:
+            print(indent_space + "feature " + str(tree_node.split_feature) + " == " + feature_value)
+            child_node = tree_node.children[feature_value]
+            if child_node:
+                print_tree(child_node, depth+1)
+            else:
+                # no child node for this value, so use majority class of parent (tree_node)
+                print(indent_space + "  " + "class" + ": " + tree_node.majority_class)
+
+def classify(tree_node, instance):
+    if tree_node.split_feature == -1:
+        return tree_node.majority_class
+    child_node = tree_node.children[instance[tree_node.split_feature]]
+    if child_node:
+        return classify(child_node, instance)
+    else:
+        return tree_node.majority_class
+
+# Now, set up the driving code to evaluate the above decision tree algorithm below
+limit=5
+# Fill in code to load data here
+
+data = list(csv.reader(open('/content/drive/MyDrive/Colab Notebooks/tictactoe.csv')))
+# Call build_tree to generate a tree -- you must understand the above code to know what is to be included in "examples" which is passed as input to the build_tree function
+# Add code to evaluate the tree
+def evaluate(train, test, limit):
+  node = build_tree(train,limit)
+  total = 0
+  correct = 0
+  for x in test:
+    temp = test[total]
+    if classify(node,x) == temp[-1]:
+      correct +=1
+    total+=1
+  return 1.0*correct/total
