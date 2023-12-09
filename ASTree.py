@@ -18,7 +18,7 @@ def process_file(file_path: Path):
 class Node:
     def __init__(self, key):
         self.key = key
-        self.profile = [0,0,0,0]
+        self.profile = [0,0,0,0,0,0,0]
         #[# of function calls, # of while loops, # of expressions, # of arguments]
     def __repr__(self):
         return f"Node(key={self.key}, profile={self.profile})"
@@ -58,18 +58,27 @@ class NodeVisitor(ast.NodeVisitor):
         whiles = [x for x in ast.walk(ast_node) if isinstance(x, ast.While)]
         expressions = [x for x in ast.walk(ast_node) if isinstance(x, ast.Expr)]
         args = [x for x in ast.walk(ast_node) if isinstance(x, ast.arg)]
-        ifs = [x for x in ast.walk(ast_node)]
+        returns = [x for x in ast.walk(ast_node) if isinstance(x, ast.Return)]
+        ifs = [x for x in ast.walk(ast_node) if isinstance(x, ast.If)]
+        fors = [x for x in ast.walk(ast_node) if isinstance(x, ast.For)]
 
         # Get number of calls
         num_calls = len(calls)
         num_whiles = len(whiles)
         num_expressions = len(expressions)
         num_args = len(args)
+        num_returns = len(returns)
+        num_ifs = len(ifs)
+        num_fors = len(fors)
+
         # Set index 0 of this Node instance's profile to found number of calls
         node.profile[0] = num_calls
         node.profile[1] = num_whiles
         node.profile[2] = num_expressions
         node.profile[3] = num_args
+        node.profile[4] = num_returns
+        node.profile[5] = num_ifs
+        node.profile[6] = num_fors
 
 
         # Add the Node object for this function to the running list of the source code file
@@ -94,7 +103,7 @@ def sim_df(sim):
     return df
 def main():
     # create Paths for the two files to process
-    file1 = Path('test_code/rockpapergpt.py')
+    file1 = Path('test_code/DrewRPS.py')
     file2 = Path('test_code/rockpapercheater.py')
 
     # process each of the two files
