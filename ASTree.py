@@ -54,31 +54,21 @@ class NodeVisitor(ast.NodeVisitor):
         # NOTE: will not be efficient to walk the tree for each sought after
         # node type, but this is for the idea, your improved approach would be in here
         # Get all calls made via list comprehension
-        calls = [x for x in ast.walk(ast_node) if isinstance(x, ast.Call)]
-        whiles = [x for x in ast.walk(ast_node) if isinstance(x, ast.While)]
-        expressions = [x for x in ast.walk(ast_node) if isinstance(x, ast.Expr)]
-        args = [x for x in ast.walk(ast_node) if isinstance(x, ast.arg)]
-        returns = [x for x in ast.walk(ast_node) if isinstance(x, ast.Return)]
-        ifs = [x for x in ast.walk(ast_node) if isinstance(x, ast.If)]
-        fors = [x for x in ast.walk(ast_node) if isinstance(x, ast.For)]
-
-        # Get number of calls
-        num_calls = len(calls)
-        num_whiles = len(whiles)
-        num_expressions = len(expressions)
-        num_args = len(args)
-        num_returns = len(returns)
-        num_ifs = len(ifs)
-        num_fors = len(fors)
-
-        # Set index 0 of this Node instance's profile to found number of calls
-        node.profile[0] = num_calls
-        node.profile[1] = num_whiles
-        node.profile[2] = num_expressions
-        node.profile[3] = num_args
-        node.profile[4] = num_returns
-        node.profile[5] = num_ifs
-        node.profile[6] = num_fors
+        for x in ast.walk(ast_node):
+            if isinstance(x, ast.Call):
+                node.profile[0]+=1
+            elif isinstance(x, ast.While):
+                node.profile[1]+=1
+            elif isinstance(x, ast.Expr):
+                node.profile[2]+=1
+            elif isinstance(x, ast.arg):
+                node.profile[3]+=1
+            elif isinstance(x, ast.Return):
+                node.profile[4]+=1
+            elif isinstance(x, ast.If):
+                node.profile[5]+=1
+            elif isinstance(x, ast.For):
+                node.profile[6]+=1
 
 
         # Add the Node object for this function to the running list of the source code file
@@ -103,14 +93,14 @@ def sim_df(sim):
     return df
 def main():
     # create Paths for the two files to process
-    file1 = Path('test_code/DrewRPS.py')
+    file1 = Path('test_code/rockpapergpt.py')
     file2 = Path('test_code/rockpapercheater.py')
 
     # process each of the two files
     #print("File 1 Nodes:")
     nodes_file1 = process_file(file1)
     # for node in nodes_file1:
-    #     print(node)
+    #      print(node)
 
     #print("\nFile 2 Nodes:")
     nodes_file2 = process_file(file2)
