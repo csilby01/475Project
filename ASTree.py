@@ -94,19 +94,13 @@ def sim_df(sim):
 def main():
     # create Paths for the two files to process
     file1 = Path('test_code/rockpapergpt.py')
-    file2 = Path('test_code/rockpapercheater.py')
+    file2 = Path('test_code/DrewRPS.py')
 
-    # process each of the two files
-    #print("File 1 Nodes:")
+    #process the files
     nodes_file1 = process_file(file1)
-    # for node in nodes_file1:
-    #      print(node)
-
-    #print("\nFile 2 Nodes:")
     nodes_file2 = process_file(file2)
-    # for node in nodes_file2:
-    #     print(node)
 
+    #calculate and output similarity
     sim = similarity_ranker(nodes_file1, nodes_file2)
     simdf = sim_df(sim)
     print(simdf)
